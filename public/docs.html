@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MoviBici · Documentación de la API</title>
+<link rel="stylesheet" href="/styles.css">
+<style>
+.ep{background:var(--panel);border:1px solid var(--borde);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.ep summary{display:flex;gap:12px;align-items:center;padding:11px 16px;cursor:pointer;list-style:none}
+.ep summary::-webkit-details-marker{display:none}
+.m{font:700 12px/1 ui-monospace,Consolas,monospace;padding:6px 9px;border-radius:7px;min-width:62px;text-align:center;color:#0e1a17}
+.GET{background:#5ac8fa}.POST{background:#b6f24a}.PATCH{background:#ffb938}.PUT{background:#ffb938}.DELETE{background:#ff6b6b}
+.ep code{font-size:14px}.ep .cuerpo{padding:4px 18px 16px;border-top:1px solid var(--borde);color:var(--texto-2);font-size:14px}
+pre{background:#0a1411;border:1px solid var(--borde);border-radius:8px;padding:10px 12px;overflow:auto;color:var(--texto)}
+</style>
+</head>
+<body>
+<header class="top"><a class="marca" href="/"><span>Movi<b>Bici</b></span></a><nav class="menu"><a href="/">Aplicación</a><a class="on" href="/docs">API</a><a href="/api/openapi.json">openapi.json</a></nav></header>
+<main>
+  <h1>API de MoviBici <span class="etq">v0.9.0-rc1</span></h1>
+  <p style="color:var(--texto-2)">Autenticación: <code>Authorization: Bearer &lt;token&gt;</code> (se obtiene en <code>/api/auth/login</code>). Definición importable en Postman, SoapUI u OWASP ZAP desde <a href="/api/openapi.json">/api/openapi.json</a>.</p>
+  <div id="lista"></div>
+</main>
+<script>
+fetch('/api/openapi.json').then(r => r.json()).then(spec => {
+  const esc = t => String(t).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const html = [];
+  for (const [ruta, ops] of Object.entries(spec.paths)) for (const [metodo, o] of Object.entries(ops)) {
+    const M = metodo.toUpperCase();
+    const params = (o.parameters || []).map(p => `<li><code>${p.name}</code> (${p.in}${p.required ? ', obligatorio' : ''})</li>`).join('');
+    const body = o.requestBody ? '<pre>' + esc(JSON.stringify(Object.fromEntries(Object.entries(o.requestBody.content['application/json'].schema.properties).map(([k, v]) => [k, v.type === 'integer' ? 0 : 'texto'])), null, 2)) + '</pre>' : '';
+    html.push(`<details class="ep"><summary><span class="m ${M}">${M}</span><code>${esc(ruta)}</code><span style="color:var(--texto-2)">${esc(o.summary)}</span>${o.security ? '<span class="etq warn" style="margin-left:auto">requiere token</span>' : ''}</summary>
+      <div class="cuerpo">${params ? '<p>Parámetros</p><ul>' + params + '</ul>' : ''}${body ? '<p>Cuerpo (JSON)</p>' + body : ''}${!params && !body ? '<p>Sin parámetros.</p>' : ''}</div></details>`);
+  }
+  document.getElementById('lista').innerHTML = html.join('');
+});
+</script>
+</body>
+</html>
